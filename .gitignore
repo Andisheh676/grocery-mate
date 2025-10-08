@@ -1,0 +1,54 @@
+# Sensitive files - Never commit these
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.crt
+*.der
+*.pub
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+*.ppk
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.secret
+secrets.yml
+secrets.yaml
+
+# SSH and credentials
+.ssh/
+*.ovpn
+
+# API keys and tokens
+*.token
+*.creds
+credentials.json
+service-account*.json
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Dependencies
+node_modules/
+vendor/
+venv/
+env/
+
+# Build outputs
+dist/
+build/
+*.pyc
+__pycache__/

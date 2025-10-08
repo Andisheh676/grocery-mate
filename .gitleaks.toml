@@ -1,0 +1,41 @@
+title = "Gitleaks Configuration"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "openssh-private-key"
+description = "OpenSSH Private Key"
+regex = '''-----BEGIN OPENSSH PRIVATE KEY-----'''
+tags = ["key", "ssh"]
+
+[[rules]]
+id = "rsa-private-key"
+description = "RSA Private Key"
+regex = '''-----BEGIN RSA PRIVATE KEY-----'''
+tags = ["key", "ssh"]
+
+[[rules]]
+id = "ec-private-key"
+description = "EC Private Key"
+regex = '''-----BEGIN EC PRIVATE KEY-----'''
+tags = ["key", "ssh"]
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key"
+regex = '''(?i)(api_key|apikey|api-key)[\s]*[=:][\s]*['"]?[a-zA-Z0-9]{20,}['"]?'''
+tags = ["key", "api"]
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["key", "aws"]
+
+[allowlist]
+description = "Allowlisted files"
+paths = [
+  '''^\.gitleaks\.toml$''',
+  '''(.*?)(jpg|gif|png|pdf)$'''
+]
