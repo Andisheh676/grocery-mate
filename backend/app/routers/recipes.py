@@ -1,118 +1,133 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
+from app import models, schemas
+from app.database import get_db
+from app.auth import get_current_user
+from app.services.gemini_service import generate_recipe
 import json
-from .. import models, schemas
-from ..database import get_db
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 
+# ---------------------------
+# Get all recipes for current user
+# ---------------------------
 @router.get("/", response_model=List[schemas.Recipe])
-def get_recipes(healthy_only: bool = False, db: Session = Depends(get_db)):
-    """Get all recipes, optionally filtered by healthy recipes"""
-    query = db.query(models.Recipe)
-    if healthy_only:
-        query = query.filter(models.Recipe.is_healthy == True)
-    return query.all()
+def get_recipes(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return db.query(models.Recipe).filter(models.Recipe.user_id == current_user.id).all()
 
+
+# ---------------------------
+# Get a specific recipe by ID
+# ---------------------------
 @router.get("/{recipe_id}", response_model=schemas.Recipe)
-def get_recipe(recipe_id: int, db: Session = Depends(get_db)):
-    """Get a specific recipe by ID"""
-    recipe = db.query(models.Recipe).filter(models.Recipe.id == recipe_id).first()
+def get_recipe(
+    recipe_id: int,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    recipe = db.query(models.Recipe).filter(
+        models.Recipe.id == recipe_id,
+        models.Recipe.user_id == current_user.id
+    ).first()
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
     return recipe
 
-@router.post("/", response_model=schemas.Recipe)
-def create_recipe(recipe: schemas.RecipeCreate, db: Session = Depends(get_db)):
-    """Create a new recipe"""
-    db_recipe = models.Recipe(**recipe.model_dump())
-    db.add(db_recipe)
-    db.commit()
-    db.refresh(db_recipe)
-    return db_recipe
 
-@router.delete("/{recipe_id}")
-def delete_recipe(recipe_id: int, db: Session = Depends(get_db)):
-    """Delete a recipe"""
-    db_recipe = db.query(models.Recipe).filter(models.Recipe.id == recipe_id).first()
-    if not db_recipe:
-        raise HTTPException(status_code=404, detail="Recipe not found")
-    
-    db.delete(db_recipe)
-    db.commit()
-    return {"message": "Recipe deleted successfully"}
-
-@router.get("/match/ingredients", response_model=List[schemas.Recipe])
-def find_matching_recipes(db: Session = Depends(get_db)):
-    """Find recipes that can be made with available ingredients"""
-    # Get all available ingredients
-    available_ingredients = db.query(models.Ingredient).filter(
-        models.Ingredient.quantity > 0
-    ).all()
-    
-    available_names = {ing.name.lower() for ing in available_ingredients}
-    
-    # Get all recipes
-    all_recipes = db.query(models.Recipe).all()
-    matching_recipes = []
-    
-    for recipe in all_recipes:
-        try:
-            recipe_ingredients = json.loads(recipe.ingredients)
-            # Check if all recipe ingredients are available
-            required_ingredients = {ing.lower() for ing in recipe_ingredients}
-            
-            # Calculate match percentage
-            if required_ingredients.issubset(available_names):
-                matching_recipes.append(recipe)
-        except json.JSONDecodeError:
-            continue
-    
-    return matching_recipes
-
-@router.post("/seed-sample")
-def seed_sample_recipes(db: Session = Depends(get_db)):
-    """Seed database with sample healthy recipes"""
-    sample_recipes = [
-        {
-            "name": "Grilled Chicken Salad",
-            "description": "Healthy protein-packed salad with fresh vegetables",
-            "ingredients": json.dumps(["chicken", "lettuce", "tomato", "cucumber", "olive oil"]),
-            "instructions": "1. Grill chicken breast\n2. Chop vegetables\n3. Mix with olive oil\n4. Season to taste",
-            "prep_time": 20,
-            "servings": 2,
-            "calories": 350,
-            "is_healthy": True
-        },
-        {
-            "name": "Vegetable Stir Fry",
-            "description": "Quick and nutritious vegetable dish",
-            "ingredients": json.dumps(["broccoli", "carrot", "bell pepper", "soy sauce", "garlic"]),
-            "instructions": "1. Heat pan with oil\n2. Add garlic\n3. Stir fry vegetables\n4. Add soy sauce",
-            "prep_time": 15,
-            "servings": 3,
-            "calories": 180,
-            "is_healthy": True
-        },
-        {
-            "name": "Fruit Smoothie",
-            "description": "Refreshing and vitamin-rich smoothie",
-            "ingredients": json.dumps(["banana", "strawberry", "yogurt", "honey"]),
-            "instructions": "1. Add all ingredients to blender\n2. Blend until smooth\n3. Serve cold",
-            "prep_time": 5,
-            "servings": 1,
-            "calories": 220,
-            "is_healthy": True
-        }
+# ---------------------------
+# Generate a recipe using Gemini
+# ---------------------------
+@router.post("/generate", response_model=schemas.Recipe)
+async def create_recipe(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    ingredients = [
+        {"name": "tomato", "quantity": "2", "unit": "pcs"},
+        {"name": "onion", "quantity": "1", "unit": "pcs"}
     ]
     
-    for recipe_data in sample_recipes:
-        # Check if recipe already exists
-        existing = db.query(models.Recipe).filter(models.Recipe.name == recipe_data["name"]).first()
-        if not existing:
-            db_recipe = models.Recipe(**recipe_data)
-            db.add(db_recipe)
+    recipe_data = await generate_recipe(ingredients, preferences="vegan")
     
+    if "error" in recipe_data:
+        raise HTTPException(status_code=500, detail=f"Gemini error: {recipe_data['error']}")
+    
+    if not recipe_data.get("ingredients") or not recipe_data.get("instructions"):
+        raise HTTPException(status_code=500, detail="Gemini returned invalid recipe data")
+
+    def parse_time(t: str) -> int:
+        try:
+            return int(t.split()[0])
+        except:
+            return 0
+
+    new_recipe = models.Recipe(
+        name=recipe_data.get("name", "Unknown Recipe"),
+        description=recipe_data.get("description", ""),
+        ingredients=json.dumps(recipe_data.get("ingredients", [])),
+        instructions=json.dumps(recipe_data.get("instructions", [])),
+        prep_time=parse_time(recipe_data.get("prep_time", "0")),
+        cook_time=parse_time(recipe_data.get("cook_time", "0")),
+        servings=recipe_data.get("servings", 1),
+        calories=recipe_data.get("calories", 0),
+        difficulty=recipe_data.get("difficulty", "Unknown"),
+        tags=json.dumps(recipe_data.get("tags", [])),
+        user_id=current_user.id
+    )
+    
+    db.add(new_recipe)
     db.commit()
-    return {"message": "Sample recipes seeded successfully"}
+    db.refresh(new_recipe)
+    
+    return new_recipe
+
+
+# ---------------------------
+# Seed sample recipes (for testing)
+# ---------------------------
+@router.post("/seed-sample")
+def seed_sample_recipes(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    sample_recipes = [
+        {
+            "name": "Tomato Pasta",
+            "description": "Delicious tomato pasta",
+            "ingredients": json.dumps([{"name": "tomato", "quantity": 2, "unit": "pcs"}]),
+            "instructions": json.dumps(["Boil pasta", "Add tomato sauce"]),
+            "prep_time": 10,
+            "cook_time": 15,
+            "servings": 2,
+            "calories": 300,
+            "difficulty": "Easy",
+            "tags": json.dumps(["pasta", "vegan"]),
+            "user_id": current_user.id
+        }
+    ]
+    for r in sample_recipes:
+        db_recipe = models.Recipe(**r)
+        db.add(db_recipe)
+    db.commit()
+    return {"message": "Sample recipes added"}
+
+
+# ---------------------------
+# Match recipes based on ingredients
+# ---------------------------
+@router.get("/match/ingredients")
+def match_recipes(
+    ingredients: List[str] = Query(...),
+    db: Session = Depends(get_db)
+):
+    recipes = db.query(models.Recipe).all()
+    matched = []
+    for r in recipes:
+        recipe_ingredients = [i['name'] for i in json.loads(r.ingredients)]
+        if all(ing in recipe_ingredients for ing in ingredients):
+            matched.append(r)
+    return matched

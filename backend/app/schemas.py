@@ -1,11 +1,12 @@
-from pydantic import BaseModel
+
 from typing import Optional, List
 from datetime import date, datetime
+from pydantic import BaseModel, EmailStr
+
 
 # Ingredient Schemas
 class IngredientBase(BaseModel):
     name: str
-    category: str
     location: str
     quantity: float
     unit: str
@@ -16,7 +17,6 @@ class IngredientCreate(IngredientBase):
 
 class IngredientUpdate(BaseModel):
     name: Optional[str] = None
-    category: Optional[str] = None
     location: Optional[str] = None
     quantity: Optional[float] = None
     unit: Optional[str] = None
@@ -29,6 +29,7 @@ class Ingredient(IngredientBase):
 
     class Config:
         from_attributes = True
+
 
 # Shopping List Schemas
 class ShoppingItemBase(BaseModel):
@@ -81,3 +82,8 @@ class Recipe(RecipeBase):
 
     class Config:
         from_attributes = True
+
+class UserCreate(BaseModel):
+    username: str
+    email: EmailStr
+    password: str
