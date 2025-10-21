@@ -86,8 +86,14 @@ def create_news(
             counter += 1
         slug = f"{slug}-{counter}"
     
+    # اگر image_url خالی یا "string" بود، مقدار پیش‌فرض بگذار
+    image_url = news.image_url
+    if not image_url or image_url == "string":
+        image_url = "https://picsum.photos/200/150"
+
     db_news = models.News(
         **news.model_dump(),
+        image_url=image_url,
         slug=slug,
         author_id=current_admin.id,
         published_at=datetime.utcnow() if news.is_published else None
@@ -96,6 +102,7 @@ def create_news(
     db.commit()
     db.refresh(db_news)
     return db_news
+
 
 @router.put("/{news_id}", response_model=schemas_news.News)
 def update_news(

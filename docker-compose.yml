@@ -12,11 +12,30 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - grocery-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U grocery_user"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: grocery_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8081:80"
+    depends_on:
+      - postgres
+    networks:
+      - grocery-network
+
 volumes:
   postgres_data:
+
+networks:
+  grocery-network:
+    driver: bridge

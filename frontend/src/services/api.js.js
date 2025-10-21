@@ -1,4 +1,6 @@
 import axios from 'axios'
+import { getToken } from '../stores/auth'
+
 
 const API_URL = 'http://localhost:8000'
 
@@ -8,6 +10,26 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 })
+
+// Add auth token to all requests
+api.interceptors.request.use((config) => {
+  const token = getToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+// Handle 401 errors (redirect to login)
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Redirect to login
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
 
 // Ingredients API
 export const ingredientsAPI = {
