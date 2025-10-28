@@ -7,12 +7,10 @@
 
     <div v-else class="news-list">
       <div v-for="item in news" :key="item.id" class="news-card">
-        <!-- عکس خبر یا placeholder -->
         <div class="image-container">
-          <img :src="item.image_url !== 'string' ? item.image_url : 'https://via.placeholder.com/200x150?text=No+Image'" alt="News image" />
+          <img :src="validImage(item.image_url)" alt="News image" />
         </div>
 
-        <!-- محتوای خبر -->
         <div class="news-content">
           <h2>{{ item.title }}</h2>
           <p>{{ item.summary }}</p>
@@ -23,49 +21,42 @@
   </div>
 </template>
 
-<script>
-import { ref, onMounted } from "vue";
+<script setup>
+import { ref, onMounted } from "vue"
+import axios from "axios"
 
-export default {
-  name: "NewsList",
-  setup() {
-    const news = ref([]);
-    const loading = ref(true);
+const news = ref([])
+const loading = ref(true)
 
-    // گرفتن اخبار از backend
-    const fetchNews = async () => {
-      try {
-        const res = await fetch("http://127.0.0.1:8000/news/public?skip=0&limit=10");
-        const data = await res.json();
-        news.value = data;
-      } catch (err) {
-        console.error("Failed to fetch news:", err);
-      } finally {
-        loading.value = false;
-      }
-    };
+const API_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"
 
-    // فرمت تاریخ
-    const formatDate = (dateStr) => {
-      if (!dateStr) return "";
-      return new Date(dateStr).toLocaleString();
-    };
-
-    // بررسی URL تصویر، اگر خالی بود عکس placeholder بده
-    const validImage = (url) => {
-      if (!url || url === "string") {
-        return "https://via.placeholder.com/200x150?text=No+Image";
-      }
-      return url;
-    };
-
-    onMounted(() => {
-      fetchNews();
-    });
-
-    return { news, loading, formatDate, validImage };
+const fetchNews = async () => {
+  try {
+    const res = await axios.get(`${API_URL}/news/public?skip=0&limit=10`)
+    news.value = res.data
+  } catch (err) {
+    console.error("Failed to fetch news:", err)
+  } finally {
+    loading.value = false
   }
-};
+}
+
+const formatDate = (dateStr) => {
+  if (!dateStr) return "Unknown"
+  const date = new Date(dateStr)
+  return date.toLocaleDateString() + " " + date.toLocaleTimeString()
+}
+
+const validImage = (url) => {
+  if (!url || url === "string") {
+    return "https://via.placeholder.com/200x150?text=No+Image"
+  }
+  return url
+}
+
+onMounted(() => {
+  fetchNews()
+})
 </script>
 
 <style scoped>

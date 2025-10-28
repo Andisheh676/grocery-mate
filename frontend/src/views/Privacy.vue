@@ -29,7 +29,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
-const API_URL = 'http://localhost:8000'
+const API_URL = 'http://91.99.23.49:8000'
 
 const pageContent = ref({
   title: 'Privacy Policy',

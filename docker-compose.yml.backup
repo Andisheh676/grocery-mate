@@ -41,7 +41,7 @@ services:
     networks:
       - devnet
 
-  backend:
+       backend:
     image: python:3.12-slim
     container_name: grocery_backend
     working_dir: /app

@@ -28,9 +28,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def get_password_hash(password: str) -> str:
-    """Hash a password"""
-    return pwd_context.hash(password)
+def get_password_hash(password: str):
+    truncated = password[:72]  # کوتاه کردن به 72 کاراکتر
+    return pwd_context.hash(truncated)
+
 
 # ---------------------------
 # JWT token utilities
@@ -65,10 +66,14 @@ async def get_current_user(
     except JWTError:
         raise credentials_exception
 
+    # --- این قسمت را جایگزین کن ---
     user = db.query(models.User).filter(models.User.email == token_data.email).first()
     if user is None:
         raise credentials_exception
+
+    db.refresh(user)   # ← این خط باعث می‌شود آخرین مقادیر از دیتابیس خوانده شوند
     return user
+
 
 
 async def get_current_active_user(

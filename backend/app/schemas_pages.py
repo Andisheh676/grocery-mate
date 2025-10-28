@@ -23,7 +23,7 @@ class PageContent(PageContentBase):
     updated_at: datetime
 
     class Config:
-        from_attributes = True
+         orm_mode = True
 
 # Model for public view of page content
 class PageContentPublic(BaseModel):
@@ -33,4 +33,4 @@ class PageContentPublic(BaseModel):
     updated_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True

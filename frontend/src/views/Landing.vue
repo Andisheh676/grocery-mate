@@ -163,7 +163,7 @@ import axios from 'axios'
 const router = useRouter()
 const news = ref([])
 const loading = ref(true)
-const API_URL = 'http://localhost:8000'
+const API_URL = 'http://91.99.23.49:8000'
 
 const loadNews = async () => {
   try {

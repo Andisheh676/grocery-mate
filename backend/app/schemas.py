@@ -1,10 +1,12 @@
-
+# schemas.py
 from typing import Optional, List
 from datetime import date, datetime
 from pydantic import BaseModel, EmailStr
 
 
+# ---------------------------
 # Ingredient Schemas
+# ---------------------------
 class IngredientBase(BaseModel):
     name: str
     location: str
@@ -13,7 +15,7 @@ class IngredientBase(BaseModel):
     expiry_date: Optional[date] = None
 
 class IngredientCreate(IngredientBase):
-    pass
+    category: Optional[str] = "Unknown"
 
 class IngredientUpdate(BaseModel):
     name: Optional[str] = None
@@ -21,6 +23,10 @@ class IngredientUpdate(BaseModel):
     quantity: Optional[float] = None
     unit: Optional[str] = None
     expiry_date: Optional[date] = None
+    category: Optional[str] = None   # اگر ستون category داری
+
+
+
 
 class Ingredient(IngredientBase):
     id: int
@@ -28,10 +34,12 @@ class Ingredient(IngredientBase):
     updated_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
+# ---------------------------
 # Shopping List Schemas
+# ---------------------------
 class ShoppingItemBase(BaseModel):
     item_name: str
     quantity: float
@@ -46,7 +54,7 @@ class ShoppingItem(ShoppingItemBase):
     shopping_list_id: int
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class ShoppingListBase(BaseModel):
     name: str
@@ -60,17 +68,23 @@ class ShoppingList(ShoppingListBase):
     items: List[ShoppingItem] = []
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
+
+# ---------------------------
 # Recipe Schemas
+# ---------------------------
 class RecipeBase(BaseModel):
     name: str
     description: Optional[str] = None
     ingredients: str  # JSON string
     instructions: str
     prep_time: Optional[int] = None
+    cook_time: Optional[int] = None
     servings: int = 2
     calories: Optional[int] = None
+    difficulty: Optional[str] = None
+    tags: Optional[str] = None
     is_healthy: bool = True
 
 class RecipeCreate(RecipeBase):
@@ -81,9 +95,36 @@ class Recipe(RecipeBase):
     created_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
-class UserCreate(BaseModel):
+
+# ---------------------------
+# User Schemas
+# ---------------------------
+class UserBase(BaseModel):
     username: str
     email: EmailStr
+
+class UserCreate(UserBase):
     password: str
+
+class User(UserBase):
+    id: int
+    is_admin: bool = False
+    is_active: bool = True
+    created_at: datetime
+    last_login: Optional[datetime] = None
+
+    class Config:
+        orm_mode = True
+
+
+# ---------------------------
+# Authentication Schemas
+# ---------------------------
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None

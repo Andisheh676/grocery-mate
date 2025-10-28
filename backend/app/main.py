@@ -23,6 +23,12 @@ Base.metadata.create_all(bind=engine)
 # --------------------------
 # Create FastAPI app
 # --------------------------
+
+origins = [
+    "http://localhost:5173",  # پورت frontend
+    "http://91.99.23.49:5173",  # اگر با IP خارجی دسترسی داری
+]
+
 app = FastAPI(
     title="GroceryMate API",
     description="API for managing groceries, shopping lists, and recipes",
@@ -34,7 +40,7 @@ app = FastAPI(
 # --------------------------
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

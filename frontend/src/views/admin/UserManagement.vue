@@ -91,7 +91,7 @@ const stats = ref({
 const loading = ref(true)
 const error = ref(null)
 
-const API_URL = 'http://localhost:8000'
+const API_URL = 'http://91.99.23.49:8000'
 
 const loadUsers = async () => {
   try {

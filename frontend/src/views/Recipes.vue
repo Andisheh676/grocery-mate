@@ -61,22 +61,13 @@
           
           <div class="space-y-2 mb-4">
             <div class="flex items-center text-sm text-gray-500">
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Prep time: {{ recipe.prep_time }} min
+              ⏱️ Prep time: {{ recipe.prep_time }} min
             </div>
             <div class="flex items-center text-sm text-gray-500">
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              Servings: {{ recipe.servings }}
+              👥 Servings: {{ recipe.servings }}
             </div>
             <div v-if="recipe.calories" class="flex items-center text-sm text-gray-500">
-              <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Calories: {{ recipe.calories }}
+              🔥 Calories: {{ recipe.calories }}
             </div>
           </div>
 
@@ -105,11 +96,7 @@
                 <h3 class="text-2xl font-bold text-gray-900">{{ selectedRecipe.name }}</h3>
                 <p class="text-gray-600 mt-2">{{ selectedRecipe.description }}</p>
               </div>
-              <button @click="selectedRecipe = null" class="text-gray-400 hover:text-gray-500">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <button @click="selectedRecipe = null" class="text-gray-400 hover:text-gray-500">✖️</button>
             </div>
 
             <div class="mb-6">
@@ -140,19 +127,21 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 import { recipesAPI } from '../services/api.js'
+
+const API_BASE = 'http://91.99.23.49:8000'
 
 const recipes = ref([])
 const matchingRecipes = ref([])
 const showHealthyOnly = ref(false)
 const showMatchingOnly = ref(false)
 const selectedRecipe = ref(null)
+const userIngredients = ref([])
 
 const displayedRecipes = computed(() => {
   let filtered = showMatchingOnly.value ? matchingRecipes.value : recipes.value
-  if (showHealthyOnly.value) {
-    filtered = filtered.filter(r => r.is_healthy)
-  }
+  if (showHealthyOnly.value) filtered = filtered.filter(r => r.is_healthy)
   return filtered
 })
 
@@ -160,6 +149,17 @@ const loadRecipes = async () => {
   try {
     const response = await recipesAPI.getAll()
     recipes.value = response.data
+
+    // ساخت لیست مواد اولیه موجود کاربر
+    userIngredients.value = []
+    response.data.forEach(r => {
+      try {
+        const ingList = JSON.parse(r.ingredients)
+        ingList.forEach(i => {
+          if (!userIngredients.value.includes(i)) userIngredients.value.push(i)
+        })
+      } catch {}
+    })
   } catch (error) {
     console.error('Error loading recipes:', error)
   }
@@ -167,15 +167,35 @@ const loadRecipes = async () => {
 
 const findMatchingRecipes = async () => {
   try {
-    const response = await recipesAPI.findMatching()
+    if (userIngredients.value.length === 0) {
+      alert('No ingredients available to match recipes!')
+      return
+    }
+
+    // مطمئن شویم همه عناصر رشته‌ای هستند
+    const ingredientsStr = userIngredients.value.map(i => i.toString())
+
+    // تبدیل آرایه به query string
+    const params = new URLSearchParams()
+    ingredientsStr.forEach(ing => params.append('ingredients', ing))
+
+    console.log('Requesting:', `${API_BASE}/recipes/match/ingredients?${params.toString()}`)
+
+    const response = await axios.get(`${API_BASE}/recipes/match/ingredients?${params.toString()}`)
     matchingRecipes.value = response.data
     showMatchingOnly.value = true
-    
+
     if (matchingRecipes.value.length === 0) {
-      alert('No matching recipes found. Add more ingredients to your inventory!')
+      alert('No matching recipes found!')
     }
   } catch (error) {
     console.error('Error finding matching recipes:', error)
+    if (error.response) {
+      console.error('Server response:', error.response.status, error.response.data)
+      alert(`Server error: ${error.response.status}`)
+    } else {
+      alert('Network error. Check server connection.')
+    }
   }
 }
 

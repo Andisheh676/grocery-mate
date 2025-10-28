@@ -1,8 +1,10 @@
 // stores/auth.js
 import { ref, computed } from 'vue'
 import axios from 'axios'
+import qs from 'qs'
 
-const API_URL = 'http://127.0.0.1:8000'
+// ---------- API URL ----------
+const API_URL = import.meta.env.VITE_API_URL  // از فایل .env
 
 // ---------- State ----------
 const user = ref(null)
@@ -10,8 +12,14 @@ export const token = ref(localStorage.getItem('token') || '')
 export const isAuthenticated = ref(!!token.value)
 export const isAdmin = computed(() => user.value?.is_admin ?? false)
 
+// ---------- Axios Instance ----------
+const api = axios.create({
+  baseURL: API_URL,
+  withCredentials: true  // ← اجباری برای کوکی و header ها
+})
+
 // ---------- Axios Interceptor ----------
-axios.interceptors.request.use(config => {
+api.interceptors.request.use(config => {
   if (token.value) {
     config.headers.Authorization = `Bearer ${token.value}`
   }
@@ -27,37 +35,39 @@ export const saveToken = (newToken) => {
 
 export const getToken = () => token.value
 
+export function logout() {
+  token.value = null
+  user.value = null
+  isAuthenticated.value = false
+  localStorage.removeItem('token')
+}
+
 // ---------- Actions ----------
 export async function login(email, password) {
   try {
-    const formData = new FormData()
-    formData.append('username', email)
-    formData.append('password', password)
+    const formData = qs.stringify({
+      grant_type: 'password',
+      username: email,
+      password: password
+    })
 
-    const response = await axios.post(`${API_URL}/auth/login`, formData)
+    const response = await api.post('/auth/login', formData, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    })
+
     saveToken(response.data.access_token)
-
     await fetchCurrentUser()
     return true
   } catch (error) {
     console.error('Login failed:', error)
+    alert('Login failed: check your credentials or server CORS')
     return false
-  }
-}
-
-export async function register(email, username, password) {
-  try {
-    await axios.post(`${API_URL}/auth/register`, { email, username, password })
-    return await login(email, password)
-  } catch (error) {
-    console.error('Registration failed:', error)
-    throw error
   }
 }
 
 export async function fetchCurrentUser() {
   try {
-    const response = await axios.get(`${API_URL}/auth/me`)
+    const response = await api.get('/auth/me')
     user.value = response.data
   } catch (error) {
     console.error('Failed to fetch user:', error)
@@ -66,14 +76,19 @@ export async function fetchCurrentUser() {
   }
 }
 
-export function logout() {
-  token.value = null
-  user.value = null
-  isAuthenticated.value = false
-  localStorage.removeItem('token')
+export async function register(email, username, password) {
+  try {
+    await api.post('/auth/register', { email, username, password })
+    return await login(email, password)
+  } catch (error) {
+    console.error('Registration failed:', error)
+    throw error
+  }
 }
 
 // ---------- Getters ----------
 export function getUser() {
   return user.value
 }
+
+export default api

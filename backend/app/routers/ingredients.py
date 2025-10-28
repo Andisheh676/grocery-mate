@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from .. import models, schemas
 from ..database import get_db
 from ..auth import get_current_user
+from app import schemas
+
 
 router = APIRouter(prefix="/ingredients", tags=["ingredients"])
 
@@ -41,7 +43,7 @@ def get_ingredient(
 @router.post("/", response_model=schemas.Ingredient)
 def create_ingredient(
     ingredient: schemas.IngredientCreate,
-    current_user: models.User = Depends(get_current_user),  # user-specific
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """Create a new ingredient for current user"""
@@ -52,14 +54,21 @@ def create_ingredient(
     if existing:
         raise HTTPException(status_code=400, detail="Ingredient already exists")
 
+    # فقط از dict استفاده کن و category رو override نکن
+    ingredient_data = ingredient.dict()
+    if not ingredient_data.get("category"):
+        ingredient_data["category"] = "Unknown"  # مقدار پیش‌فرض
+
     db_ingredient = models.Ingredient(
-        **ingredient.model_dump(),
-        user_id=current_user.id
+        **ingredient_data,
+        user_id=current_user.id  # فقط user_id اضافه می‌کنیم
     )
+
     db.add(db_ingredient)
     db.commit()
     db.refresh(db_ingredient)
     return db_ingredient
+ 
 
 
 @router.put("/{ingredient_id}", response_model=schemas.Ingredient)
@@ -77,7 +86,7 @@ def update_ingredient(
     if not db_ingredient:
         raise HTTPException(status_code=404, detail="Ingredient not found")
 
-    update_data = ingredient.model_dump(exclude_unset=True)
+    update_data = ingredient.dict(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_ingredient, key, value)
 

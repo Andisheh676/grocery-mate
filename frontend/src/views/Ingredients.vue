@@ -213,16 +213,25 @@ const editIngredient = (ingredient) => {
   form.value = { ...ingredient }
 }
 
-const deleteIngredientConfirm = async (id) => {
-  if (confirm('Are you sure you want to delete this ingredient?')) {
-    try {
-      await ingredientsAPI.delete(id)
-      await loadIngredients()
-    } catch (error) {
-      console.error('Error deleting ingredient:', error)
+const findMatchingRecipes = async () => {
+  try {
+    // استخراج نام مواد موجود از inventory
+    const ingredientsList = ingredients.value.map(i => i.name); // فرض: ingredients یک ref با لیست موجودی است
+    const params = new URLSearchParams();
+    ingredientsList.forEach(name => params.append('ingredients', name));
+
+    const response = await recipesAPI.get(`/recipes/match/ingredients?${params.toString()}`);
+    matchingRecipes.value = response.data;
+    showMatchingOnly.value = true;
+
+    if (matchingRecipes.value.length === 0) {
+      alert('No matching recipes found. Add more ingredients to your inventory!');
     }
+  } catch (error) {
+    console.error('Error finding matching recipes:', error);
   }
-}
+};
+
 
 const closeModal = () => {
   showAddModal.value = false

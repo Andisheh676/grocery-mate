@@ -3,13 +3,13 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 
-from .. import models, schemas_auth, auth
+from .. import models, schemas_auth
+from app import auth
 from ..database import get_db
 from .. import schemas_admin
 
-
-
 router = APIRouter(prefix="/auth", tags=["authentication"])
+
 
 
 # ---------------------------
@@ -88,5 +88,4 @@ def login(
 # ---------------------------
 @router.get("/me", response_model=schemas_admin.UserAdmin)
 async def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
-    """Get current user info"""
-    return current_user
+   return schemas_admin.UserAdmin.from_orm(current_user)

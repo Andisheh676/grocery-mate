@@ -119,15 +119,25 @@ def seed_sample_recipes(
 # ---------------------------
 # Match recipes based on ingredients
 # ---------------------------
-@router.get("/match/ingredients")
+@router.get("/match/ingredients", response_model=List[schemas.Recipe])
 def match_recipes(
     ingredients: List[str] = Query(...),
     db: Session = Depends(get_db)
 ):
     recipes = db.query(models.Recipe).all()
     matched = []
+
     for r in recipes:
-        recipe_ingredients = [i['name'] for i in json.loads(r.ingredients)]
-        if all(ing in recipe_ingredients for ing in ingredients):
-            matched.append(r)
+        try:
+            recipe_ingredients_json = json.loads(r.ingredients)
+            recipe_ingredients = [
+                i['name'] if isinstance(i, dict) and 'name' in i else str(i)
+                for i in recipe_ingredients_json
+            ]
+            if all(ing in recipe_ingredients for ing in ingredients):
+                matched.append(r)
+        except Exception:
+            # JSON خراب یا نامعتبر را نادیده می‌گیریم
+            continue
+
     return matched

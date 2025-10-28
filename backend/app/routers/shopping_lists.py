@@ -27,7 +27,7 @@ def get_shopping_list(list_id:int, current_user: models.User = Depends(get_curre
 def create_shopping_list(shopping_list:schemas.ShoppingListCreate,
                          current_user: models.User = Depends(get_current_user),
                          db: Session = Depends(get_db)):
-    db_list = models.ShoppingList(**shopping_list.model_dump(), user_id=current_user.id)
+    db_list = models.ShoppingList(**shopping_list.dict(), user_id=current_user.id)
     db.add(db_list)
     db.commit()
     db.refresh(db_list)

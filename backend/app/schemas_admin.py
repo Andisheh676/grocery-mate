@@ -12,10 +12,11 @@ class UserAdmin(BaseModel):
     is_active: bool
     is_admin: bool
     created_at: datetime
-    last_login: Optional[datetime] = None
+    last_login: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {
+        "from_attributes": True
+    }
 
 
 class UserUpdate(BaseModel):
