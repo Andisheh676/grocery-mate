@@ -13,12 +13,12 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
-    allowedHosts: ['grocerymate.me', '91.99.23.49', 'localhost'],   
+    allowedHosts: ['grocerymate.tech', '91.99.23.49', 'localhost'],
     proxy: {
       '/api': {
-        target: 'http://91.99.23.49:8000',
+        target: 'https://api.grocerymate.tech/',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        rewrite: path => path.replace(/^\/api/, '')
       }
     }
   }

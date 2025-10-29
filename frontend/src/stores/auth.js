@@ -4,7 +4,7 @@ import axios from 'axios'
 import qs from 'qs'
 
 // ---------- API URL ----------
-const API_URL = import.meta.env.VITE_API_URL  // از فایل .env
+const API_URL = import.meta.env.VITE_API_URL  //
 
 // ---------- State ----------
 const user = ref(null)
@@ -14,8 +14,8 @@ export const isAdmin = computed(() => user.value?.is_admin ?? false)
 
 // ---------- Axios Instance ----------
 const api = axios.create({
-  baseURL: API_URL,
-  withCredentials: true  // ← اجباری برای کوکی و header ها
+  baseURL: import.meta.env.VITE_API_URL,
+  withCredentials: true
 })
 
 // ---------- Axios Interceptor ----------
