@@ -4,6 +4,12 @@
       <h2 class="text-3xl font-bold text-gray-900">Recipes</h2>
       <div class="flex space-x-3">
         <button
+          @click="showAIModal = true"
+          class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700"
+        >
+          🤖 Generate Recipe with AI
+        </button>
+        <button
           @click="findMatchingRecipes"
           class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700"
         >
@@ -85,6 +91,109 @@
       <p class="text-gray-500">No recipes found. Try loading sample recipes or adjust your filters!</p>
     </div>
 
+    <!-- AI Generation Modal -->
+    <div v-if="showAIModal" class="fixed z-10 inset-0 overflow-y-auto">
+      <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
+          <div class="bg-gradient-to-r from-pink-50 to-purple-50 px-4 pt-5 pb-4 sm:p-6">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h3 class="text-2xl font-bold text-gray-900">🤖 AI Recipe Generator</h3>
+                <p class="text-gray-600 mt-2">Let AI create a delicious recipe for you!</p>
+              </div>
+              <button @click="closeAIModal" class="text-gray-400 hover:text-gray-500">✖️</button>
+            </div>
+
+            <div v-if="!aiGeneratedRecipe" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Enter ingredients (comma-separated):
+                </label>
+                <textarea
+                  v-model="aiIngredients"
+                  rows="3"
+                  class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="e.g., chicken, tomatoes, onions, garlic"
+                ></textarea>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                  Preferences (optional):
+                </label>
+                <input
+                  v-model="aiPreferences"
+                  type="text"
+                  class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="e.g., vegan, low-carb, spicy"
+                />
+              </div>
+
+              <button
+                @click="generateRecipeWithAI"
+                :disabled="aiLoading || !aiIngredients.trim()"
+                class="w-full inline-flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span v-if="aiLoading">
+                  <svg class="animate-spin h-5 w-5 mr-2 inline" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Generating...
+                </span>
+                <span v-else>✨ Generate Recipe</span>
+              </button>
+
+              <p v-if="aiError" class="text-red-600 text-sm mt-2">{{ aiError }}</p>
+            </div>
+
+            <div v-else class="space-y-4">
+              <div class="bg-white rounded-lg p-4 shadow-sm">
+                <h4 class="text-xl font-bold text-gray-900 mb-2">{{ aiGeneratedRecipe.name }}</h4>
+                <p class="text-gray-600 mb-4">{{ aiGeneratedRecipe.description }}</p>
+
+                <div class="mb-4">
+                  <h5 class="font-semibold text-gray-900 mb-2">Ingredients:</h5>
+                  <ul class="list-disc list-inside space-y-1 text-gray-700">
+                    <li v-for="(ingredient, index) in parseIngredients(aiGeneratedRecipe.ingredients)" :key="index">
+                      {{ ingredient }}
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="mb-4">
+                  <h5 class="font-semibold text-gray-900 mb-2">Instructions:</h5>
+                  <p class="text-gray-700 whitespace-pre-line">{{ aiGeneratedRecipe.instructions }}</p>
+                </div>
+
+                <div class="flex items-center justify-between text-sm text-gray-500 pt-3 border-t">
+                  <span>⏱️ {{ aiGeneratedRecipe.prep_time }} min</span>
+                  <span>👥 {{ aiGeneratedRecipe.servings }} servings</span>
+                  <span v-if="aiGeneratedRecipe.calories">🔥 {{ aiGeneratedRecipe.calories }} cal</span>
+                </div>
+              </div>
+
+              <div class="flex space-x-3">
+                <button
+                  @click="saveAIRecipe"
+                  class="flex-1 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                >
+                  💾 Save Recipe
+                </button>
+                <button
+                  @click="resetAIModal"
+                  class="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  🔄 Generate Another
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Recipe Detail Modal -->
     <div v-if="selectedRecipe" class="fixed z-10 inset-0 overflow-y-auto">
       <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -139,6 +248,14 @@ const showMatchingOnly = ref(false)
 const selectedRecipe = ref(null)
 const userIngredients = ref([])
 
+// AI Generation
+const showAIModal = ref(false)
+const aiIngredients = ref('')
+const aiPreferences = ref('')
+const aiLoading = ref(false)
+const aiError = ref('')
+const aiGeneratedRecipe = ref(null)
+
 const displayedRecipes = computed(() => {
   let filtered = showMatchingOnly.value ? matchingRecipes.value : recipes.value
   if (showHealthyOnly.value) filtered = filtered.filter(r => r.is_healthy)
@@ -150,7 +267,6 @@ const loadRecipes = async () => {
     const response = await recipesAPI.getAll()
     recipes.value = response.data
 
-    // ساخت لیست مواد اولیه موجود کاربر
     userIngredients.value = []
     response.data.forEach(r => {
       try {
@@ -172,14 +288,9 @@ const findMatchingRecipes = async () => {
       return
     }
 
-    // مطمئن شویم همه عناصر رشته‌ای هستند
     const ingredientsStr = userIngredients.value.map(i => i.toString())
-
-    // تبدیل آرایه به query string
     const params = new URLSearchParams()
     ingredientsStr.forEach(ing => params.append('ingredients', ing))
-
-    console.log('Requesting:', `${API_BASE}/recipes/match/ingredients?${params.toString()}`)
 
     const response = await axios.get(`${API_BASE}/recipes/match/ingredients?${params.toString()}`)
     matchingRecipes.value = response.data
@@ -190,13 +301,56 @@ const findMatchingRecipes = async () => {
     }
   } catch (error) {
     console.error('Error finding matching recipes:', error)
-    if (error.response) {
-      console.error('Server response:', error.response.status, error.response.data)
-      alert(`Server error: ${error.response.status}`)
-    } else {
-      alert('Network error. Check server connection.')
-    }
+    alert('Error finding matching recipes. Check console for details.')
   }
+}
+
+const generateRecipeWithAI = async () => {
+  aiLoading.value = true
+  aiError.value = ''
+
+  try {
+    const ingredientsList = aiIngredients.value.split(',').map(i => i.trim()).filter(i => i)
+    
+    const payload = {
+      ingredients: ingredientsList.map(name => ({ name })),
+      preferences: aiPreferences.value || undefined
+    }
+
+    console.log('Generating recipe with:', payload)
+
+    const response = await axios.post(`${API_BASE}/recipes/generate`, payload)
+    aiGeneratedRecipe.value = response.data
+  } catch (error) {
+    console.error('AI generation error:', error)
+    aiError.value = error.response?.data?.detail || 'Failed to generate recipe. Please try again.'
+  } finally {
+    aiLoading.value = false
+  }
+}
+
+const saveAIRecipe = async () => {
+  try {
+    await recipesAPI.create(aiGeneratedRecipe.value)
+    await loadRecipes()
+    alert('Recipe saved successfully!')
+    closeAIModal()
+  } catch (error) {
+    console.error('Error saving recipe:', error)
+    alert('Failed to save recipe')
+  }
+}
+
+const resetAIModal = () => {
+  aiGeneratedRecipe.value = null
+  aiIngredients.value = ''
+  aiPreferences.value = ''
+  aiError.value = ''
+}
+
+const closeAIModal = () => {
+  showAIModal.value = false
+  resetAIModal()
 }
 
 const seedSampleRecipes = async () => {
