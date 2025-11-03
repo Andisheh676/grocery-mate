@@ -239,7 +239,7 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { recipesAPI } from '../services/api.js'
 
-const API_BASE = 'http://91.99.23.49:8000'
+const API_BASE = import.meta.env.VITE_API_URL
 
 const recipes = ref([])
 const matchingRecipes = ref([])
@@ -310,8 +310,15 @@ const generateRecipeWithAI = async () => {
   aiError.value = ''
 
   try {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      aiError.value = 'Please log in first to use AI recipe generation.'
+      aiLoading.value = false
+      return
+    }
+
     const ingredientsList = aiIngredients.value.split(',').map(i => i.trim()).filter(i => i)
-    
+
     const payload = {
       ingredients: ingredientsList.map(name => ({ name })),
       preferences: aiPreferences.value || undefined
@@ -319,7 +326,12 @@ const generateRecipeWithAI = async () => {
 
     console.log('Generating recipe with:', payload)
 
-    const response = await axios.post(`${API_BASE}/recipes/generate`, payload)
+    const response = await axios.post(`${API_BASE}/recipes/generate`, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
     aiGeneratedRecipe.value = response.data
   } catch (error) {
     console.error('AI generation error:', error)
@@ -328,6 +340,7 @@ const generateRecipeWithAI = async () => {
     aiLoading.value = false
   }
 }
+
 
 const saveAIRecipe = async () => {
   try {

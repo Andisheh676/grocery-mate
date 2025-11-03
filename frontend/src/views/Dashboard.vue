@@ -1,116 +1,97 @@
 <template>
-  <div class="px-4 py-6 sm:px-0">
-    <h2 class="text-3xl font-bold text-gray-900 mb-6">Dashboard</h2>
+  <div class="relative min-h-screen px-8 py-10 bg-gradient-to-b from-gray-50 to-gray-100">
+    <!-- Background Image -->
+    <div 
+      class="absolute inset-0 bg-center bg-cover opacity-10"
+      style="background-image: url('https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=1470&q=80');"
+    ></div>
 
-    <!-- Stats Grid -->
-    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <div class="text-4xl">🥬</div>
+    <!-- Content Overlay -->
+    <div class="relative z-10">
+      <h1 class="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-10 drop-shadow-md">🥗 GroceryMate Dashboard</h1>
+
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
+        <div class="bg-gradient-to-r from-green-400 to-green-600 text-white shadow-xl rounded-2xl p-6 hover:scale-105 transform transition-all duration-300">
+          <div class="flex items-center space-x-4">
+            <div class="text-5xl sm:text-6xl">🥬</div>
+            <div>
+              <p class="text-xs sm:text-sm font-medium uppercase tracking-wide">Total Ingredients</p>
+              <p class="text-3xl sm:text-4xl font-bold">{{ stats.totalIngredients }}</p>
             </div>
-            <div class="ml-5 w-0 flex-1">
-              <dl>
-                <dt class="text-sm font-medium text-gray-500 truncate">Total Ingredients</dt>
-                <dd class="text-3xl font-semibold text-gray-900">{{ stats.totalIngredients }}</dd>
-              </dl>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-blue-400 to-blue-600 text-white shadow-xl rounded-2xl p-6 hover:scale-105 transform transition-all duration-300">
+          <div class="flex items-center space-x-4">
+            <div class="text-5xl sm:text-6xl">❄️</div>
+            <div>
+              <p class="text-xs sm:text-sm font-medium uppercase tracking-wide">In Fridge</p>
+              <p class="text-3xl sm:text-4xl font-bold">{{ stats.fridgeItems }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white shadow-xl rounded-2xl p-6 hover:scale-105 transform transition-all duration-300">
+          <div class="flex items-center space-x-4">
+            <div class="text-5xl sm:text-6xl">🗄️</div>
+            <div>
+              <p class="text-xs sm:text-sm font-medium uppercase tracking-wide">In Pantry</p>
+              <p class="text-3xl sm:text-4xl font-bold">{{ stats.pantryItems }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-red-400 to-red-600 text-white shadow-xl rounded-2xl p-6 hover:scale-105 transform transition-all duration-300">
+          <div class="flex items-center space-x-4">
+            <div class="text-5xl sm:text-6xl">⚠️</div>
+            <div>
+              <p class="text-xs sm:text-sm font-medium uppercase tracking-wide">Expiring Soon</p>
+              <p class="text-3xl sm:text-4xl font-bold">{{ stats.expiringSoon }}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <div class="text-4xl">❄️</div>
-            </div>
-            <div class="ml-5 w-0 flex-1">
-              <dl>
-                <dt class="text-sm font-medium text-gray-500 truncate">In Fridge</dt>
-                <dd class="text-3xl font-semibold text-gray-900">{{ stats.fridgeItems }}</dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <div class="text-4xl">🗄️</div>
-            </div>
-            <div class="ml-5 w-0 flex-1">
-              <dl>
-                <dt class="text-sm font-medium text-gray-500 truncate">In Pantry</dt>
-                <dd class="text-3xl font-semibold text-gray-900">{{ stats.pantryItems }}</dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <div class="text-4xl">⚠️</div>
-            </div>
-            <div class="ml-5 w-0 flex-1">
-              <dl>
-                <dt class="text-sm font-medium text-gray-500 truncate">Expiring Soon</dt>
-                <dd class="text-3xl font-semibold text-red-600">{{ stats.expiringSoon }}</dd>
-              </dl>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Expiring Items Alert -->
-    <div v-if="expiringItems.length > 0" class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
-      <div class="flex">
-        <div class="flex-shrink-0">
-          <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-          </svg>
-        </div>
-        <div class="ml-3">
-          <h3 class="text-sm font-medium text-red-800">Items Expiring Soon</h3>
-          <div class="mt-2 text-sm text-red-700">
-            <ul class="list-disc list-inside space-y-1">
+      <!-- Expiring Items Alert -->
+      <div v-if="expiringItems.length > 0" class="bg-red-50 border-l-8 border-red-500 p-6 rounded-2xl shadow-md mb-12 animate-fade-in">
+        <div class="flex items-start space-x-4">
+          <div class="text-3xl sm:text-4xl animate-pulse">⚠️</div>
+          <div>
+            <h2 class="text-xl sm:text-2xl font-bold text-red-700 mb-3 drop-shadow-sm">Items Expiring Soon</h2>
+            <ul class="list-disc list-inside space-y-1 text-red-800">
               <li v-for="item in expiringItems" :key="item.id">
-                {{ item.name }} - Expires: {{ formatDate(item.expiry_date) }}
+                <span class="font-semibold">{{ item.name }}</span> - Expires: {{ formatDate(item.expiry_date) }}
               </li>
             </ul>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Quick Actions -->
-    <div class="bg-white shadow rounded-lg p-6">
-      <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <!-- Quick Actions -->
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <router-link
           to="/ingredients"
-          class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+          class="bg-green-500 hover:bg-green-600 text-white rounded-2xl shadow-lg py-4 sm:py-5 flex justify-center items-center space-x-3 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
         >
-          Add Ingredient
+          <span class="text-2xl sm:text-3xl">➕</span>
+          <span class="text-base sm:text-lg font-semibold">Add Ingredient</span>
         </router-link>
+
         <router-link
           to="/shopping"
-          class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+          class="bg-blue-500 hover:bg-blue-600 text-white rounded-2xl shadow-lg py-4 sm:py-5 flex justify-center items-center space-x-3 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
         >
-          Create Shopping List
+          <span class="text-2xl sm:text-3xl">🛒</span>
+          <span class="text-base sm:text-lg font-semibold">Create Shopping List</span>
         </router-link>
+
         <router-link
           to="/recipes"
-          class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700"
+          class="bg-purple-500 hover:bg-purple-600 text-white rounded-2xl shadow-lg py-4 sm:py-5 flex justify-center items-center space-x-3 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
         >
-          Find Recipes
+          <span class="text-2xl sm:text-3xl">🍽️</span>
+          <span class="text-base sm:text-lg font-semibold">Find Recipes</span>
         </router-link>
       </div>
     </div>
@@ -160,3 +141,13 @@ onMounted(() => {
   loadDashboard()
 })
 </script>
+
+<style>
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+</style>

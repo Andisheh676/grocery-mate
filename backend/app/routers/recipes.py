@@ -141,3 +141,30 @@ def match_recipes(
             continue
 
     return matched
+
+# ---------------------------
+# Create a new recipe manually (used when AI-generated recipe is saved from frontend)
+# ---------------------------
+@router.post("/", response_model=schemas.Recipe)
+def create_recipe_manual(
+    recipe: schemas.RecipeCreate,
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    new_recipe = models.Recipe(
+        name=recipe.name,
+        description=recipe.description,
+        ingredients=json.dumps(recipe.ingredients),
+        instructions=json.dumps(recipe.instructions),
+        prep_time=recipe.prep_time,
+        cook_time=recipe.cook_time,
+        servings=recipe.servings,
+        calories=recipe.calories,
+        difficulty=recipe.difficulty,
+        tags=json.dumps(recipe.tags),
+        user_id=current_user.id
+    )
+    db.add(new_recipe)
+    db.commit()
+    db.refresh(new_recipe)
+    return new_recipe

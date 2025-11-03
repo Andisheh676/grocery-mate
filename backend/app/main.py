@@ -26,7 +26,8 @@ Base.metadata.create_all(bind=engine)
 
 origins = [
     "http://localhost:5173",  # پورت frontend
-    "http://91.99.23.49:5173",  # اگر با IP خارجی دسترسی داری
+    "http://91.99.23.49:5173",
+    "https://grocerymate.tech",  # اگر با IP خارجی دسترسی داری
 ]
 
 app = FastAPI(
